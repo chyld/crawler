@@ -13,21 +13,17 @@ def get_html(url)
   end
 end
 
-def get_links(html)
+def get_links(url, html)
   begin
-    scheme = html.request.path.scheme
-    hostname = html.request.path.hostname
     pattern = /<a.*?href.*?['"](.*?)['"].*?>/m
     links = html.scan(pattern).flatten
-    links.map do |link|
-      !link.include?(scheme) ? "#{scheme}://#{hostname}/#{link}" : link
-    end
+    links.map { |link| URI.parse(link).relative? ? (URI.parse(url) + URI.parse(link)).to_s : link }
   rescue
     []
   end
 end
 
-def get_words(html)
+def get_words(url, html)
   begin
     html.split.flatten
   rescue
@@ -42,13 +38,13 @@ def add_to_index(url, words)
 end
 
 def add_to_graph(url, links)
-  @graphs[url] = links
+  @graph[url] = links
 end
 
 def crawl(url)
   html  = get_html(url)
-  words = get_words(html)
-  links = get_links(html)
+  words = get_words(url, html)
+  links = get_links(url, html)
 
   add_to_index(url, words)
   add_to_graph(url, links)
@@ -58,5 +54,6 @@ def crawl(url)
   crawl(@links.shift) if @links.count > 0
 end
 
-crawl('http://www.huffingtonpost.com')
+crawl('http://172.16.3.105/~loaner/index.html')
+binding.pry
 
